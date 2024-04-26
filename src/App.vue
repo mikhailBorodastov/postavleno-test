@@ -1,26 +1,33 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png">
-  <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <h1>Добавление пользователя</h1>
+  <div class="container">
+    <UserForm @user-added="addUser" />
+    <UserTable ref="userTable" />
+  </div>
 </template>
 
-<script>
-import HelloWorld from './components/HelloWorld.vue'
+<script setup>
+import { ref } from 'vue';
+import UserForm from './components/UserForm.vue';
+import UserTable from './components/UserTable.vue';
 
-export default {
-  name: 'App',
-  components: {
-    HelloWorld
-  }
-}
+const userTable = ref(null);
+
+const addUser = user => {
+  userTable.value.addUser(user);
+};
 </script>
 
 <style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+.container {
+  max-width: 1110px;
+}
+
+.table-delete {
+  border: none;
+  background-color: transparent;
+  color: red;
+  cursor: pointer;
+  text-decoration: underline;
 }
 </style>
