@@ -7,9 +7,10 @@
     <div class="form-group">
       <label class="label" for="gender">Пол:</label>
       <select class="select" id="gender" v-model="newUser.gender" required>
-        <option value="">Выберете пол</option>
-        <option value="male">Male</option>
-        <option value="female">Female</option>
+        <option value="" disabled>Выберете пол</option>
+        <option v-for="option in genderOptions" :key="option.value" :value="option.value">
+          {{ option.label }}
+        </option>
       </select>
     </div>
     <div class="form-group">
@@ -27,18 +28,25 @@
 <script setup>
 import { ref, defineEmits } from 'vue';
 
-const newUser = ref({
+const NEW_USER_TEMPLATE = {
   name: { first: '' },
   gender: '',
   email: '',
   dob: { age: null },
-});
+};
+
+const genderOptions = [
+  { value: 'male', label: 'Male' },
+  { value: 'female', label: 'Female' },
+];
+
+const newUser = ref({ ...NEW_USER_TEMPLATE });
 
 const emit = defineEmits(['user-added']);
 
 const addUser = () => {
   emit('user-added', { ...newUser.value });
-  newUser.value = { name: { first: '' }, gender: '', email: '', dob: { age: null } };
+  newUser.value = { ...NEW_USER_TEMPLATE };
 };
 </script>
 

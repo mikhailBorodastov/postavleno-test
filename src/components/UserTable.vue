@@ -1,14 +1,10 @@
 <template>
   <div id="myGrid" style="height: 400px; width:100%;" class="ag-theme-alpine"></div>
-  <div v-if="logData.length">
-    <h2>Лог редактирования:</h2>
-    <ul v-for="(logEntry, index) in logData" :key="index">
-      <li>{{ logEntry }}</li>
-    </ul>
-  </div>
 </template>
+
 <script setup>
-import {ref, onMounted, defineExpose, onBeforeMount, onBeforeUnmount} from 'vue';
+import { ref, onMounted, defineExpose, onBeforeUnmount} from 'vue';
+import AgGrid from '../utils/AgGrid';
 
 const gridApi = ref(null);
 const columnDefs = ref([
@@ -23,58 +19,62 @@ const columnDefs = ref([
   },
 ]);
 const rowData = ref([]);
-const logData = ref([]);
 
 const initializeGrid = () => {
-  const gridDiv = document.querySelector('#myGrid');
-  gridApi.value = window.agGrid.createGrid(gridDiv, {
-    columnDefs: columnDefs.value,
-    rowData: rowData.value,
-    onGridReady: params => {
-      gridApi.value = params.api;
-    },
+  AgGrid.init('#myGrid', columnDefs.value, rowData.value, params => {
+    gridApi.value = params.api;
   });
 };
 
 const fetchUsers = async () => {
-  const response = await fetch('https://randomuser.me/api/?results=5');
-  const data = await response.json();
-  rowData.value = data.results;
-  gridApi.value.setGridOption('rowData', rowData.value);
+  try {
+    const response = await fetch('https://randomuser.me/api/?results=5');
+    const data = await response.json();
+    rowData.value = data.results;
+    AgGrid.setRowData(rowData.value);
+  } catch (error) {
+    console.error('Error fetching users:', error);
+  }
 };
 
 const addUser = user => {
   rowData.value.push(user);
-  gridApi.value.setGridOption('rowData', rowData.value);
-  const logEntry = `Добавлен пользователь: "${user.name.first}"`;
-  logData.value.push(logEntry);
+  AgGrid.setRowData(rowData.value);
+  const event = new CustomEvent('user-action', {
+    detail: `Добавлен пользователь: "${user.name.first}"`,
+    bubbles: true,
+  });
+  dispatchEvent(event);
 };
 
 const deleteUser = user => {
+  console.log(user.id.value)
   const index = rowData.value.findIndex(u => u.email === user.email);
   if (index !== -1) {
     const deletedUser = rowData.value[index];
     rowData.value.splice(index, 1);
-    gridApi.value.setGridOption('rowData', rowData.value);
-    const logEntry = `Удалён пользователь: "${deletedUser.name.first}"`;
-    logData.value.push(logEntry);
+    AgGrid.setRowData(rowData.value);
+    const event = new CustomEvent('user-action', {
+      detail: `Удалён пользователь: "${deletedUser.name.first}"`,
+      bubbles: true,
+    });
+    dispatchEvent(event);
   }
 };
 
-onBeforeMount(() => {
+onMounted(() => {
   const script = document.createElement('script');
   script.src = 'https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.js';
   script.async = true;
-  script.onload = initializeGrid;
+  script.onload = () => {
+    initializeGrid();
+    fetchUsers();
+  };
   document.head.appendChild(script);
 });
 
-onMounted(fetchUsers);
-
 onBeforeUnmount(() => {
-  if (gridApi.value) {
-    gridApi.value.destroy();
-  }
+  AgGrid.destroy();
 });
 
 defineExpose({addUser});
